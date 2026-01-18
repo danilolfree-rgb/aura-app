@@ -10,12 +10,14 @@
 
         </router-link>
 
-        <button class="nav-item" onclick="navegar('extract')">
+        <router-link to="/extract" class="nav-item" active-class="active">
+
             <span class="icon">
                 <Icons class="svg" name="extract" />
             </span>
             <span class="form-label lmenu">Extrato</span>
-        </button>
+
+        </router-link>
 
         <div @click="ui.closeFab" class="fab-wrapper">
             <button class="fab-main" @click="openFab">
@@ -32,18 +34,22 @@
 
         </div>
 
-        <button class="nav-item" onclick="navegar('reserve')">
+        <router-link to="/goals" class="nav-item" active-class="active">
+
             <span class="icon">
                 <Icons class="svg" name="reserve" />
             </span>
             <span class="form-label lmenu">Metas</span>
-        </button>
-        <button class="nav-item" onclick="navegar('perfil')">
+        </router-link>
+
+        <router-link to="/user" class="nav-item" active-class="active">
+
             <span class="icon">
                 <Icons class="svg" name="user" />
             </span>
             <span class="form-label lmenu">Perfil</span>
-        </button>
+
+        </router-link>
     </nav>
 </template>
 

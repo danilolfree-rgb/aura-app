@@ -15,7 +15,6 @@ import BaseModal from './components/common/BaseModal.vue';
 import ModalRegister from './components/loginPg/ModalRegister.vue';
 import AOS from 'aos';
 import BottomNav from './components/dashboardPg/NavBarBottom.vue'
-
 const activeModal = ref(null);
 
 // Função que qualquer componente poderá usar

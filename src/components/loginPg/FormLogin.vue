@@ -31,7 +31,7 @@
 
 <script setup>
 import { ref, inject, reactive } from 'vue';
-import { authService } from '../../services/authService';
+import { authService } from '../../services/authService.ts';
 import { useRouter } from 'vue-router'
 
 const router = useRouter();

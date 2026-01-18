@@ -1,6 +1,9 @@
 <template>
     <AnimBackIndex />
-    <NavBar />
+    <NavBar>
+        <Logo />
+        <ButtonEnter />
+    </NavBar>
     <section class="landing-page">
         <Introduction data-aos="fade-up" />
         <StepsSession />
@@ -23,6 +26,8 @@ import CardRegister from '../components/indexPg/CardRegister.vue';
 import StepsSession from '../components/indexPg/StepsSession.vue';
 import Introduction from '../components/indexPg/Introduction.vue';
 import InteractiveCard from '../components/indexPg/InteractiveCard.vue';
+import ButtonEnter from '../components/common/ButtonEnter.vue';
+import Logo from '../components/common/Logo.vue';
 </script>
 
 <style lang="scss">

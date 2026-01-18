@@ -5,8 +5,8 @@ import LoginView from '../views/login.vue'
 import dashboardView from '../views/dashboard.vue'
 
 const routes = [
-    { path: '/', name: 'home', component: LandingPage, meta: { hideNav: true } },
-    { path: '/login', name: 'login', component: LoginView },
+    { path: '/', name: 'index', component: LandingPage, meta: { hideNav: true } },
+    { path: '/login', name: 'login', component: LoginView, meta: { hideNav: true } },
     { path: '/dashboard', name: 'dashboard', component: dashboardView },
     { path: '/home', name: 'home', component: () => import('../components/dashboardPg/DashboardHome.vue') }
 ]

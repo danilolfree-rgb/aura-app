@@ -1,256 +1,348 @@
 <script setup lang="ts">
 import BaseScreen from '../common/BaseScreen.vue';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { formatarMoeda } from '../../utils/formatters';
 
-// 1. Definição dos dados (constantes)
-const meses = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio",
-    "Junho", "Julho", "Agosto", "Setembro", "Outubro",
-    "Novembro", "Dezembro"
-];
+import { authService } from '../../services/authService';
+import { releasesService } from '../../services/releasesService'
 
-// 2. Estado reativo: inicia com o mês atual
+const nameUser = ref('Usuário');
+const carregando = ref(true);
+const saldoVisivel = ref(true);
+const abaAtiva = ref('categoria');
+const listaLancamentos = ref<any[]>([]); // Armazena os dados do banco
+const router = useRouter()
+
+// Configuração de meses
+const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const mesSelecionado = ref(meses[new Date().getMonth()]);
 
-// 3. Definição do evento para avisar o componente Pai (o callback)
-const emit = defineEmits(['mudou']);
+// CÁLCULOS DINÂMICOS (Baseados na lista que vem do banco)
+const resumo = computed(() => {
+    const renda = listaLancamentos.value
+        .filter(i => i.tipo === 'renda')
+        .reduce((acc, curr) => acc + Number(curr.valor), 0);
 
-// 4. Função disparada ao trocar o valor
-const handleChange = () => {
-    emit('mudou', mesSelecionado.value);
+    const gastos = listaLancamentos.value
+        .filter(i => i.tipo === 'gasto')
+        .reduce((acc, curr) => acc + Number(curr.valor), 0);
+
+    return {
+        saldo: renda - gastos,
+        renda,
+        gastos
+    };
+});
+
+const estatisticasGerais = computed(() => {
+    const apenasGastos = listaLancamentos.value.filter(i => i.tipo === 'gasto');
+    if (apenasGastos.length === 0) return null;
+
+    // Maior Gasto Individual
+    const maior = apenasGastos.reduce((m, a) => Number(a.valor) > Number(m.valor) ? a : m, apenasGastos[0]);
+
+    // Pagamento mais frequente
+    const contagemPagamentos = apenasGastos.reduce((acc, curr) => {
+        acc[curr.pagamento] = (acc[curr.pagamento] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const maisUsado = Object.keys(contagemPagamentos).reduce((a, b) =>
+        contagemPagamentos[a] > contagemPagamentos[b] ? a : b
+    );
+
+    // Quem mais gasta (Responsável)
+    const contagemQuem = apenasGastos.reduce((acc, curr) => {
+        acc[curr.responsavel] = (acc[curr.responsavel] || 0) + Number(curr.valor);
+        return acc;
+    }, {} as Record<string, number>);
+
+    const maiorResponsavel = Object.keys(contagemQuem).reduce((a, b) =>
+        contagemQuem[a] > contagemQuem[b] ? a : b, ""
+    );
+
+    return { maior, maisUsado, maiorResponsavel, totalResponsavel: contagemQuem[maiorResponsavel] };
+});
+
+const carregarDashboard = async () => {
+    carregando.value = true;
+    try {
+        const user = await authService.getUsuarioLogado();
+
+        if (!user) {
+            router.push('/');
+            return;
+        }
+
+        nameUser.value = user.primeiroNome;
+
+        // Busca os lançamentos usando o serviço
+        listaLancamentos.value = await releasesService.buscarPorMes(user.id, mesSelecionado.value);
+
+    } catch (error) {
+        console.error("Erro ao carregar dashboard:", error);
+    } finally {
+        carregando.value = false;
+    }
 };
 
-// 5. Envia o valor inicial assim que o componente carrega (opcional)
-onMounted(() => {
-    emit('mudou', mesSelecionado.value);
-});
+onMounted(carregarDashboard);
+watch(mesSelecionado, carregarDashboard);
+
 </script>
 
 <template>
-    <nav class="navbar-aura">
-        <div class="nav-container">
-            <div class="logo-aura">
-                <div class="logo-icon">A</div>
-                <span>AURA</span>
+    <BaseScreen>
+        <header class="mobile-header">
+            <div class="user-info">
+                <span class="avatar">{{ nameUser[0].toUpperCase() }}</span>
+                <div class="texts">
+                    <p class="greeting">Olá, {{ nameUser }}</p>
+                    <p class="status" :class="{ 'syncing': carregando }">
+                        {{ carregando ? 'Sincronizando...' : 'Carteira atualizada' }}
+                    </p>
+                </div>
             </div>
-            <div class="d-flex align-items-center gap-3">
-                <select id="mesGlobal" v-model="mesSelecionado" @change="handleChange" class="select-custom">
-                    <option v-for="mes in meses" :key="mes" :value="mes">
-                        {{ mes }}
-                    </option>
+            <div class="month-selector-wrapper">
+                <select v-model="mesSelecionado" class="select-month-minimal">
+                    <option v-for="mes in meses" :key="mes" :value="mes">{{ mes }}</option>
                 </select>
-                <button onclick="deslogar()" class="btn btn-outline-danger btn-sm border-0">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
+            </div>
+        </header>
+
+        <div class="main-card-mobile" :class="{ 'loading': carregando }">
+            <div class="balance-label">Balanço total disponível</div>
+            <div class="balance-row">
+                <span class="balance-value">{{ formatarMoeda(resumo.saldo) }}</span>
+                <button @click="saldoVisivel = !saldoVisivel" class="btn-eye">
+                    {{ saldoVisivel ? '👁️' : '🙈' }}
                 </button>
             </div>
-        </div>
-    </nav>
-    <BaseScreen>
-        <div class="header-section mb-4">
-            <h4 id="tituloSaudacao" style="font-weight: 800; color: white; margin-bottom: 4px;">Olá!</h4>
-            <p id="subtituloAura" style="color: #64748b; font-size: 14px; margin-bottom: 0;">Carregando seu
-                resumo...
-            </p>
-        </div>
 
-        <div class="insight-card-aura">
-            <section class="balance-field">
-                <span class="form-label">Balanço Disponível</span>
-                <h1 id="saldoTotal">R$ 0,00</h1>
-
-                <div class="summary-pills">
-                    <div class="pill positive">
-                        <span class="dot"></span>
-                        <small>Ganhos</small>
-                        <span id="resumoGanhos" class="skeleton">R$ 0,00</span>
-                    </div>
-                    <div class="pill negative">
-                        <span class="dot"></span>
-                        <small>Gastos</small>
-                        <span id="resumoGastos" class="skeleton">R$ 0,00</span>
+            <div class="stats-grid">
+                <div class="stat-item up">
+                    <div class="stat-icon">↑</div>
+                    <div class="stat-data">
+                        <small>Entradas</small>
+                        <p>{{ saldoVisivel ? formatarMoeda(resumo.renda) : '••••' }}</p>
                     </div>
                 </div>
-            </section>
-            <section class="insights-section">
-                <div class="insight-tabs">
-                    <button id="tab-btn" class="tab-btn" onclick="mostrarInsight('categoria')">🏷️
-                        Categoria</button>
-                    <button id="tab-second-btn" class="tab-btn" onclick="mostrarInsight('pagamento')">💳
-                        Pagamento</button>
-                    <button id="btn-insight-quem" class="tab-btn" onclick="mostrarInsight('quem', event)">👥
-                        Responsável</button>
-                </div>
-
-                <div id="insight-display" class="insight-card-aura">
-                    <div class="insight-content">
-                        <span id="insight-label">Carregando análise...</span>
-                        <h3 id="insight-value">---</h3>
-                        <small id="insight-detail">---</small>
+                <div class="stat-divider"></div>
+                <div class="stat-item down">
+                    <div class="stat-icon">↓</div>
+                    <div class="stat-data">
+                        <small>Saídas</small>
+                        <p>{{ saldoVisivel ? formatarMoeda(resumo.gastos) : '••••' }}</p>
                     </div>
                 </div>
-            </section>
+            </div>
         </div>
+
+        <section class="mobile-insights">
+            <div class="section-header">
+                <h3>Análise Aura ✨</h3>
+                <div class="tabs-pills">
+                    <button v-for="t in ['categoria', 'pagamento', 'quem']" :key="t" @click="abaAtiva = t"
+                        :class="['pill-btn', { active: abaAtiva === t }]">
+                        {{ t }}
+                    </button>
+                </div>
+            </div>
+
+            <transition name="slide-up" mode="out-in">
+                <div :key="abaAtiva" class="insight-card-mobile">
+                    <div v-if="!carregando && estatisticasGerais" class="insight-inner">
+                        <div class="badge-type">{{ abaAtiva }}</div>
+                        <div v-if="abaAtiva === 'categoria'">
+                            <p class="label">Maior gasto em {{ mesSelecionado }}</p>
+                            <h4 class="value-title">{{ estatisticasGerais.maior.descricao ||
+                                estatisticasGerais.maior.categoria }}</h4>
+                            <span class="highlight-price">{{ formatarMoeda(estatisticasGerais.maior.valor) }}</span>
+                        </div>
+                    </div>
+                    <div v-else class="skeleton-mobile"></div>
+                </div>
+            </transition>
+        </section>
     </BaseScreen>
 </template>
+
 <style lang="scss" scoped>
 @use '../../assets/colors' as color;
+@use '../../assets/mixins' as mxs;
 
-.navbar-aura {
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 12px 0;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    width: 100%;
-}
-
-/* O segredo está aqui: forçamos o alinhamento horizontal */
-.nav-container {
+// Cabeçalho estilo iOS/Android
+.mobile-header {
     display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
     justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-    width: 100%;
-}
+    padding: 10px 5px 25px;
 
-.logo-aura {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    white-space: nowrap;
-    /* Impede que o texto AURA quebre */
-}
-
-#mesGlobal {
-    /* Remova qualquer margin-top que possa existir */
-    margin: 0 !important;
-    background: rgba(30, 41, 59, 0.5);
-    color: #f8fafc;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 8px 16px;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.insight-card-aura {
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 28px;
-    padding: 30px;
-    margin-top: 20px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-
-    .balance-field {
-        padding: 40px 20px;
-        text-align: center;
-        background: radial-gradient(circle at center, rgba(129, 140, 248, 0.08) 0%, transparent 70%);
-
-        .label {
-            color: color.$small-text;
-            font-size: 11px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        h1 {
-            font-size: 3.2rem;
-            font-weight: 200;
-            margin: 10px 0 30px;
-            letter-spacing: -1px;
-        }
-    }
-
-    .summary-pills {
+    .user-info {
         display: flex;
-        justify-content: center;
+        align-items: center;
         gap: 12px;
 
-        .pill {
-            background: color.$bg-dark;
-            border: 1px solid color.$glass-border;
-            padding: 8px 16px;
-            border-radius: 100px;
+        .avatar {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, color.$accent, #8b5cf6);
+            border-radius: 14px; // Squircle style
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: 0.3s;
-
-            small {
-                color: color.$small-text;
-                font-size: 10px;
-            }
-
-            span {
-                font-weight: 600;
-                font-size: 13px;
-            }
-
-            &.positive {
-                box-shadow: 0 0px 5px -1px color.$positive;
-
-                &.positive span {
-                    color: color.$positive;
-                }
-
-                &.positive:hover {
-                    translate: 0 5px;
-                }
-            }
-
-            &.negative {
-                box-shadow: 0 0px 5px -1px color.$negative;
-
-                &.negative span {
-                    color: color.$negative;
-                }
-
-                &.negative:hover {
-                    translate: 0 5px;
-                }
-            }
-
-            .dot {
-                width: 6px;
-                height: 6px;
-                border-radius: 50%;
-                background: currentColor;
-            }
+            justify-content: center;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 4px 12px rgba(color.$accent, 0.3);
         }
-    }
 
-    .insight-tabs {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 12px;
-        overflow-x: auto;
-        padding-bottom: 5px;
+        .greeting {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin: 0;
+        }
 
-        .tab-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .status {
+            font-size: 0.75rem;
             color: #94a3b8;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            margin: 0;
+        }
+    }
+}
+
+// Card Principal Mobile
+.main-card-mobile {
+    @include mxs.glass;
+    border-radius: 28px;
+    padding: 24px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    margin-bottom: 30px;
+
+    .balance-label {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+    }
+
+    .balance-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+
+        .balance-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .btn-eye {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
             cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.3s ease;
+        }
+    }
+}
+
+// Grid de Ganhos/Gastos
+.stats-grid {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    padding: 15px;
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+
+        .stat-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        &.up .stat-icon {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        &.down .stat-icon {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        small {
+            color: #94a3b8;
+            font-size: 0.7rem;
+            display: block;
+        }
+
+        p {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin: 0;
         }
     }
 
+    .stat-divider {
+        width: 1px;
+        height: 30px;
+        background: rgba(255, 255, 255, 0.1);
+        margin: 0 15px;
+    }
+}
+
+// Tabs em estilo Pill (Pílula)
+.tabs-pills {
+    display: flex;
+    gap: 8px;
+    margin: 15px 0;
+    overflow-x: auto;
+    padding-bottom: 5px;
+
+    .pill-btn {
+        padding: 8px 20px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: #94a3b8;
+        white-space: nowrap;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+
+        &.active {
+            background: color.$accent;
+            color: white;
+            border-color: color.$accent;
+            box-shadow: 0 4px 12px rgba(color.$accent, 0.4);
+        }
+    }
+}
+
+// Transição suave (Slide)
+.slide-up-enter-active,
+.slide-up-leave-active {
+    transition: all 0.3s ease;
+}
+
+.slide-up-enter-from {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.slide-up-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
 }
 </style>
