@@ -1,40 +1,46 @@
 <template>
     <nav class="bottom-nav">
-        <button class="nav-item active" onclick="navegar('init')">
+
+        <router-link to="/home" class="nav-item" active-class="active">
+
             <span class="icon">
-                <Icons name="home" />
+                <Icons class="svg" name="home" />
             </span>
             <span class="form-label lmenu">Início</span>
-        </button>
+
+        </router-link>
+
         <button class="nav-item" onclick="navegar('extract')">
             <span class="icon">
-                <Icons name="extract" />
+                <Icons class="svg" name="extract" />
             </span>
             <span class="form-label lmenu">Extrato</span>
         </button>
 
-        <div class="fab-wrapper">
-            <button class="fab-main" onclick="toggleFab()">
+        <div @click="ui.closeFab" class="fab-wrapper">
+            <button class="fab-main" @click="openFab">
                 <span>
                     +
                 </span>
             </button>
-            <div class="fab-options" id="fabOptions">
+
+            <div v-if="stateFab" class="fab-options" id="fabOptions">
                 <button onclick="abrirModal('modalGasto'); toggleFab()">💸 Gasto</button>
                 <button onclick="abrirModal('modalRenda'); toggleFab()">💰 Renda</button>
                 <button onclick="abrirModal('modalReserva'); toggleFab()">🏦 Reserva</button>
             </div>
+
         </div>
 
         <button class="nav-item" onclick="navegar('reserve')">
             <span class="icon">
-                <i class="icon-menu"></i>
+                <Icons class="svg" name="reserve" />
             </span>
             <span class="form-label lmenu">Metas</span>
         </button>
         <button class="nav-item" onclick="navegar('perfil')">
             <span class="icon">
-                <i class="icon-menu"></i>
+                <Icons class="svg" name="user" />
             </span>
             <span class="form-label lmenu">Perfil</span>
         </button>
@@ -43,6 +49,19 @@
 
 <script setup>
 import Icons from '../../assets/Icons.vue';
+import { RouterLink } from 'vue-router';
+import { ref } from 'vue'
+
+const stateFab = ref(false)
+
+function openFab() {
+    if (stateFab.value) {
+        return stateFab.value = false
+    } else {
+        return stateFab.value = true
+    }
+}
+
 </script>
 
 <style lang="scss" scoped>
@@ -81,6 +100,15 @@ import Icons from '../../assets/Icons.vue';
         font-size: 1.2rem;
     }
 
+    .svg {
+        color: color.$accent;
+
+        &:hover {
+            filter: drop-shadow(0 0 10px color.$accent);
+            transform: translateY(-3px);
+        }
+    }
+
     .lmenu {
         font-size: 0.6rem;
     }
@@ -106,7 +134,6 @@ import Icons from '../../assets/Icons.vue';
             bottom: 70px;
             left: 50%;
             transform: translateX(-50%);
-
             flex-direction: column;
             gap: 10px;
             width: 140px;

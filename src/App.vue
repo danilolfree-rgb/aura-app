@@ -5,6 +5,7 @@
   <BaseModal :isOpen="activeModal === 'register'" @close="closeModal">
     <ModalRegister />
   </BaseModal>
+  <BottomNav v-if="!$route.meta.hideNav" />
 </template>
 
 <script setup>
@@ -13,6 +14,7 @@ import { RouterView } from 'vue-router';
 import BaseModal from './components/common/BaseModal.vue';
 import ModalRegister from './components/loginPg/ModalRegister.vue';
 import AOS from 'aos';
+import BottomNav from './components/dashboardPg/NavBarBottom.vue'
 
 const activeModal = ref(null);
 

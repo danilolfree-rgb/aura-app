@@ -5,9 +5,10 @@ import LoginView from '../views/login.vue'
 import dashboardView from '../views/dashboard.vue'
 
 const routes = [
-    { path: '/', name: 'home', component: LandingPage },
+    { path: '/', name: 'home', component: LandingPage, meta: { hideNav: true } },
     { path: '/login', name: 'login', component: LoginView },
-    { path: '/dashboard', name: 'dashboard', component: dashboardView }
+    { path: '/dashboard', name: 'dashboard', component: dashboardView },
+    { path: '/home', name: 'home', component: () => import('../components/dashboardPg/DashboardHome.vue') }
 ]
 
 const router = createRouter({
