@@ -58,7 +58,7 @@ async function handleLogin() {
             router.push('/dashboard');
             alert('Logado com sucesso')
         } catch (error) {
-            alert('Erro no login');
+            alert('Erro detalhado: ' + error.message);
             credentials.email = ''
             credentials.password = ''
         } finally {
