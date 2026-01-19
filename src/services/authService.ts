@@ -1,5 +1,7 @@
 import { client } from '../../lib/config';
 
+let usuarioCache: any = null;
+
 export const authService = {
     // Adicionamos a tipagem ': string' para os dois parâmetros
     async login(email: string, password: string) {
@@ -13,15 +15,19 @@ export const authService = {
     },
 
     async getUsuarioLogado() {
-        const { data: { user }, error } = await client.auth.getUser();
+        // Se já temos o user no cache, retorna ele direto (mais rápido!)
+        if (usuarioCache) return usuarioCache;
 
+        const { data: { user }, error } = await client.auth.getUser();
         if (error || !user) return null;
 
-        return {
+        usuarioCache = {
             id: user.id,
             primeiroNome: (user.user_metadata?.display_name || 'Usuário').split(' ')[0],
             email: user.email
         };
+
+        return usuarioCache;
     },
 
     async logout() {

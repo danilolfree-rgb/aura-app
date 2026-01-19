@@ -8,7 +8,8 @@ const routes = [
     { path: '/', name: 'index', component: LandingPage, meta: { hideNav: true } },
     { path: '/login', name: 'login', component: LoginView, meta: { hideNav: true } },
     { path: '/dashboard', name: 'dashboard', component: dashboardView },
-    { path: '/home', name: 'home', component: () => import('../components/dashboardPg/DashboardHome.vue') }
+    { path: '/home', name: 'home', component: () => import('../components/dashboardPg/DashboardHome.vue') },
+    { path: '/extract', name: 'extract', component: () => import('../components/dashboardPg/ExtractPg.vue') }
 ]
 
 const router = createRouter({

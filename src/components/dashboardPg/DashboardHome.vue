@@ -206,8 +206,7 @@ watch(mesSelecionado, carregarDashboard);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 40px;
-    padding: 20px 0;
+
 
     .profile-section {
         display: flex;

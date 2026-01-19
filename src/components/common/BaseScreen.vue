@@ -31,6 +31,7 @@ const deslogar = async () => {
 .app-screen {
     padding: 10px;
     padding-bottom: 100px;
+    margin-top: 60px;
     /* Espaço para não cobrir o conteúdo com o menu bottom */
     animation: fadeIn 0.3s ease;
 }
