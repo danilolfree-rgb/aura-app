@@ -98,3 +98,13 @@
     justify-content: center;
     z-index: 9999;
 }
+
+.svg {
+    color: color.$accent;
+    padding: 0;
+
+    &:hover {
+        filter: drop-shadow(0 0 10px color.$accent);
+        transform: translateY(-3px);
+    }
+}

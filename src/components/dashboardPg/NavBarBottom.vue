@@ -6,7 +6,6 @@
             <span class="icon">
                 <Icons class="svg" name="home" />
             </span>
-            <span class="form-label lmenu">Início</span>
 
         </router-link>
 
@@ -15,7 +14,6 @@
             <span class="icon">
                 <Icons class="svg" name="extract" />
             </span>
-            <span class="form-label lmenu">Extrato</span>
 
         </router-link>
 
@@ -39,7 +37,7 @@
             <span class="icon">
                 <Icons class="svg" name="reserve" />
             </span>
-            <span class="form-label lmenu">Metas</span>
+
         </router-link>
 
         <router-link to="/user" class="nav-item" active-class="active">
@@ -47,7 +45,6 @@
             <span class="icon">
                 <Icons class="svg" name="user" />
             </span>
-            <span class="form-label lmenu">Perfil</span>
 
         </router-link>
     </nav>
@@ -78,9 +75,9 @@ function openFab() {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 70px;
+    height: 50px;
     background: color.$nav-bg;
-    backdrop-filter: blur(15px);
+    backdrop-filter: blur(13px);
     display: flex;
     justify-content: space-around;
     align-items: center;
@@ -97,22 +94,13 @@ function openFab() {
         flex-direction: column;
         align-items: center;
         font-size: 0.7rem;
-        gap: 4px;
         cursor: pointer;
         transition: 0.3s;
+        text-decoration: none;
     }
 
     .icon {
         font-size: 1.2rem;
-    }
-
-    .svg {
-        color: color.$accent;
-
-        &:hover {
-            filter: drop-shadow(0 0 10px color.$accent);
-            transform: translateY(-3px);
-        }
     }
 
     .lmenu {
@@ -124,14 +112,14 @@ function openFab() {
         top: -20px;
 
         .fab-main {
-            width: 55px;
-            height: 55px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: color.$accent;
             color: white;
-            border: 4px solid #0f172a;
+            border: none;
             font-size: 24px;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 1px 10px rgba(99, 102, 241, 0.4);
             cursor: pointer;
         }
 

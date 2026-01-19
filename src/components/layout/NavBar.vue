@@ -13,7 +13,7 @@
     @include mxs.navbar-style;
     @include mxs.glass;
 
-    position: sticky;
+    position: absolute;
     top: 0;
     z-index: 1000;
 

@@ -6,6 +6,7 @@ import { formatarMoeda } from '../../utils/formatters';
 
 import { authService } from '../../services/authService';
 import { releasesService } from '../../services/releasesService'
+import Icons from '../../assets/Icons.vue';
 
 const nameUser = ref('Usuário');
 const carregando = ref(true);
@@ -94,74 +95,102 @@ watch(mesSelecionado, carregarDashboard);
 
 <template>
     <BaseScreen>
-        <header class="mobile-header">
-            <div class="user-info">
-                <span class="avatar">{{ nameUser[0].toUpperCase() }}</span>
-                <div class="texts">
-                    <p class="greeting">Olá, {{ nameUser }}</p>
-                    <p class="status" :class="{ 'syncing': carregando }">
-                        {{ carregando ? 'Sincronizando...' : 'Carteira atualizada' }}
-                    </p>
+        <header class="bar-user-info">
+            <div class="profile-section">
+                <div class="avatar-glow">
+                    <span class="avatar">{{ nameUser[0].toUpperCase() }}</span>
+                </div>
+                <div class="welcome-msg">
+                    <small>Bem-vindo de volta,</small>
+                    <h2>{{ nameUser }}</h2>
                 </div>
             </div>
-            <div class="month-selector-wrapper">
-                <select v-model="mesSelecionado" class="select-month-minimal">
-                    <option v-for="mes in meses" :key="mes" :value="mes">{{ mes }}</option>
-                </select>
+            <div class="actions">
+                <div class="month-pill">
+                    <select v-model="mesSelecionado">
+                        <option v-for="mes in meses" :key="mes" :value="mes">{{ mes }}</option>
+                    </select>
+                </div>
             </div>
         </header>
 
-        <div class="main-card-mobile" :class="{ 'loading': carregando }">
-            <div class="balance-label">Balanço total disponível</div>
-            <div class="balance-row">
-                <span class="balance-value">{{ formatarMoeda(resumo.saldo) }}</span>
-                <button @click="saldoVisivel = !saldoVisivel" class="btn-eye">
-                    {{ saldoVisivel ? '👁️' : '🙈' }}
-                </button>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-item up">
-                    <div class="stat-icon">↑</div>
-                    <div class="stat-data">
-                        <small>Entradas</small>
-                        <p>{{ saldoVisivel ? formatarMoeda(resumo.renda) : '••••' }}</p>
-                    </div>
+        <div class="wallet-card" :class="{ 'card-loading': carregando }">
+            <div class="card-inner">
+                <div class="card-head">
+                    <span>Saldo Aura</span>
+                    <button @click="saldoVisivel = !saldoVisivel" class="blur-toggle">
+                        <i v-if="saldoVisivel">
+                            <Icons class="svg" name="open" />
+                        </i><i v-else>
+                            <Icons class="svg" name="lock" />
+                        </i>
+                    </button>
                 </div>
-                <div class="stat-divider"></div>
-                <div class="stat-item down">
-                    <div class="stat-icon">↓</div>
-                    <div class="stat-data">
-                        <small>Saídas</small>
-                        <p>{{ saldoVisivel ? formatarMoeda(resumo.gastos) : '••••' }}</p>
+                <h1 class="main-balance" :class="{ 'is-blurred': !saldoVisivel }">
+                    {{ saldoVisivel ? formatarMoeda(resumo.saldo) : 'R$ ••••••' }}
+                </h1>
+                <div class="card-footer">
+                    <div class="mini-stat">
+                        <span class="label">Entradas</span>
+                        <span class="val positive">+{{ formatarMoeda(resumo.renda) }}</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="label">Saídas</span>
+                        <span class="val negative">-{{ formatarMoeda(resumo.gastos) }}</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <section class="mobile-insights">
-            <div class="section-header">
-                <h3>Análise Aura ✨</h3>
-                <div class="tabs-pills">
-                    <button v-for="t in ['categoria', 'pagamento', 'quem']" :key="t" @click="abaAtiva = t"
-                        :class="['pill-btn', { active: abaAtiva === t }]">
-                        {{ t }}
-                    </button>
-                </div>
+        <section class="aura-brain-section">
+
+            <div class="pills-scroll">
+                <button v-for="t in ['categoria', 'pagamento', 'quem']" :key="t" @click="abaAtiva = t"
+                    :class="['pill-item', { active: abaAtiva === t }]">
+                    {{ t === 'categoria' ? '📂 Categoria' : t === 'pagamento' ? '💳 Método' : '👤 Responsável' }}
+                </button>
             </div>
 
-            <transition name="slide-up" mode="out-in">
-                <div :key="abaAtiva" class="insight-card-mobile">
-                    <div v-if="!carregando && estatisticasGerais" class="insight-inner">
-                        <div class="badge-type">{{ abaAtiva }}</div>
-                        <div v-if="abaAtiva === 'categoria'">
-                            <p class="label">Maior gasto em {{ mesSelecionado }}</p>
-                            <h4 class="value-title">{{ estatisticasGerais.maior.descricao ||
-                                estatisticasGerais.maior.categoria }}</h4>
-                            <span class="highlight-price">{{ formatarMoeda(estatisticasGerais.maior.valor) }}</span>
+            <transition name="card-swap" mode="out-in">
+                <div :key="abaAtiva" class="insight-card-modern">
+                    <div v-if="!carregando && estatisticasGerais" class="insight-body">
+                        <div v-if="abaAtiva === 'categoria'" class="insight-content">
+                            <div class="icon-circle">
+                                <Icons name="fire" class="fire" />
+                            </div>
+                            <div class="text-data">
+                                <p>O maior vilão deste mês foi <strong>{{ estatisticasGerais.maior.descricao }}</strong>
+                                </p>
+                                <div class="progress-bar-container">
+                                    <div class="progress-fill"
+                                        :style="{ width: (estatisticasGerais.maior.valor / resumo.renda * 100) + '%' }">
+                                    </div>
+                                </div>
+                                <small>Consumiu {{ Math.round(estatisticasGerais.maior.valor / resumo.renda * 100) }}%
+                                    da sua renda</small>
+                            </div>
+                        </div>
+
+                        <div v-if="abaAtiva === 'pagamento'" class="insight-content">
+                            <div class="icon-circle">💳</div>
+                            <div class="text-data">
+                                <p>Você usou mais o <strong>{{ estatisticasGerais.maisUsado }}</strong></p>
+                                <span class="insight-tip">Dica: Pagamentos em Pix costumam ter descontos de até
+                                    10%.</span>
+                            </div>
+                        </div>
+
+                        <div v-if="abaAtiva === 'quem'" class="insight-content">
+                            <div class="icon-circle">👥</div>
+                            <div class="text-data">
+                                <p>Quem mais movimentou foi <strong>{{ estatisticasGerais.maiorResponsavel }}</strong>
+                                </p>
+                                <span class="highlight-val">{{ formatarMoeda(estatisticasGerais.totalResponsavel)
+                                }}</span>
+                            </div>
                         </div>
                     </div>
-                    <div v-else class="skeleton-mobile"></div>
+                    <div v-else class="loading-shimmer"></div>
                 </div>
             </transition>
         </section>
@@ -172,177 +201,271 @@ watch(mesSelecionado, carregarDashboard);
 @use '../../assets/colors' as color;
 @use '../../assets/mixins' as mxs;
 
-// Cabeçalho estilo iOS/Android
-.mobile-header {
+// Estilo Geral da App Bar
+.bar-user-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 5px 25px;
+    margin-top: 40px;
+    padding: 20px 0;
 
-    .user-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-
-        .avatar {
-            width: 42px;
-            height: 42px;
-            background: linear-gradient(135deg, color.$accent, #8b5cf6);
-            border-radius: 14px; // Squircle style
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            color: white;
-            box-shadow: 0 4px 12px rgba(color.$accent, 0.3);
-        }
-
-        .greeting {
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin: 0;
-        }
-
-        .status {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            margin: 0;
-        }
-    }
-}
-
-// Card Principal Mobile
-.main-card-mobile {
-    @include mxs.glass;
-    border-radius: 28px;
-    padding: 24px;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    margin-bottom: 30px;
-
-    .balance-label {
-        color: #94a3b8;
-        font-size: 0.85rem;
-        margin-bottom: 8px;
-    }
-
-    .balance-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 25px;
-
-        .balance-value {
-            font-size: 2.2rem;
-            font-weight: 700;
-            letter-spacing: -1px;
-        }
-
-        .btn-eye {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-        }
-    }
-}
-
-// Grid de Ganhos/Gastos
-.stats-grid {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 20px;
-    padding: 15px;
-
-    .stat-item {
+    .profile-section {
         display: flex;
         align-items: center;
         gap: 10px;
-        flex: 1;
 
-        .stat-icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
+        .avatar-glow {
+            padding: 3px;
+            background: linear-gradient(45deg, color.$accent, #8b5cf6);
+            border-radius: 16px;
+
+            .avatar {
+                width: 45px;
+                height: 45px;
+                background: #1a1a2e;
+                border-radius: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                color: white;
+            }
         }
 
-        &.up .stat-icon {
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-        }
+        .welcome-msg {
+            small {
+                color: #94a3b8;
+                font-size: 0.75rem;
+            }
 
-        &.down .stat-icon {
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
+            h2 {
+                font-size: 1.1rem;
+                margin: 0;
+            }
         }
-
-        small {
-            color: #94a3b8;
-            font-size: 0.7rem;
-            display: block;
-        }
-
-        p {
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin: 0;
-        }
-    }
-
-    .stat-divider {
-        width: 1px;
-        height: 30px;
-        background: rgba(255, 255, 255, 0.1);
-        margin: 0 15px;
     }
 }
 
-// Tabs em estilo Pill (Pílula)
-.tabs-pills {
-    display: flex;
-    gap: 8px;
-    margin: 15px 0;
-    overflow-x: auto;
-    padding-bottom: 5px;
+// O Cartão de Saldo
+.wallet-card {
+    background: color.$card-bg;
+    border-radius: 30px;
+    padding: 25px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    max-width: 400px;
+    width: 95%;
+    margin: 0 auto;
+    animation: neonCard 6s infinite alternate;
 
-    .pill-btn {
-        padding: 8px 20px;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+    @keyframes neonCard {
+        0% {
+            box-shadow: 0 0 15px -10px color.$accent-glow;
+        }
+
+        100% {
+            box-shadow: 0 0 30px -10px color.$accent-glow;
+        }
+    }
+
+    .card-head {
+        display: flex;
+        justify-content: space-between;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+
+        .blur-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+    }
+
+    .main-balance {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0 0 25px 0;
+        transition: filter 0.3s;
+
+        &.is-blurred {
+            filter: blur(8px);
+        }
+    }
+
+    .card-footer {
+        display: flex;
+        gap: 30px;
+
+        .mini-stat {
+            .label {
+                display: block;
+                font-size: 0.7rem;
+                color: rgba(255, 255, 255, 0.6);
+            }
+
+            .val {
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+
+            .positive {
+                color: #4ade80;
+            }
+
+            .negative {
+                color: #f87171;
+            }
+        }
+    }
+}
+
+.aura-brain-section {
+    display: flex;
+    flex-direction: column;
+    margin-top: 30px;
+}
+
+// Barra de Insights
+.pills-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px 0;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    .pill-item {
+        padding: 10px 18px;
+        border-radius: 50px;
         background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         color: #94a3b8;
         white-space: nowrap;
         font-size: 0.85rem;
-        transition: all 0.3s ease;
+        transition: 0.3s;
 
         &.active {
-            background: color.$accent;
-            color: white;
-            border-color: color.$accent;
-            box-shadow: 0 4px 12px rgba(color.$accent, 0.4);
+            background: white;
+            color: black;
+            font-weight: 600;
         }
     }
 }
 
-// Transição suave (Slide)
-.slide-up-enter-active,
-.slide-up-leave-active {
-    transition: all 0.3s ease;
+// Card de Insight Individual
+.insight-card-modern {
+    @include mxs.glass;
+    border-radius: 24px;
+    padding: 20px;
+    min-height: 120px;
+
+    .insight-content {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+
+        .icon-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            background: rgba(color.$accent, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .fire {
+            color: rgb(255, 243, 15);
+            filter: drop-shadow(0 0 10px rgb(255, 243, 15));
+        }
+
+        .text-data {
+            flex: 1;
+
+            p {
+                margin: 0 0 8px 0;
+                font-size: 0.9rem;
+                color: #e2e8f0;
+            }
+
+            .progress-bar-container {
+                height: 6px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+                overflow: hidden;
+
+                .progress-fill {
+                    height: 100%;
+                    background: color.$accent;
+                    border-radius: 10px;
+                }
+            }
+
+            small {
+                color: #64748b;
+                font-size: 0.75rem;
+                margin-top: 5px;
+                display: block;
+            }
+        }
+    }
 }
 
-.slide-up-enter-from {
-    opacity: 0;
-    transform: translateY(10px);
-}
+// Bottom Nav: O toque final de app real
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 85px;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(20px);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 10px 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 
-.slide-up-leave-to {
-    opacity: 0;
-    transform: translateY(-10px);
+    .nav-item {
+        background: none;
+        border: none;
+        color: #64748b;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        font-size: 1.2rem;
+
+        span {
+            font-size: 0.65rem;
+            font-weight: 500;
+        }
+
+        &.active {
+            color: color.$accent;
+        }
+    }
+
+    .add-btn-wrapper {
+        position: relative;
+        top: -25px;
+
+        .add-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: color.$accent;
+            border: 5px solid #0f172a;
+            color: white;
+            font-size: 2rem;
+            font-weight: 300;
+            box-shadow: 0 10px 20px rgba(color.$accent, 0.4);
+        }
+    }
 }
 </style>
