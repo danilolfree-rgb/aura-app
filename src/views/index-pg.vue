@@ -37,6 +37,7 @@ import Logo from '../components/common/Logo.vue';
 .landing-page {
     color: white;
     padding: 0 20px;
+    margin-top: 60px;
     overflow-x: hidden;
 
     .stats {
